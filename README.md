@@ -22,6 +22,48 @@ Project consists of 3 main components:
 
 System has two modulation types: 2FSK at 9600 baud and OOK at 4800 baud and is designed to transmit only ASCII characters as a simple “chat program”. Operates in the 915 ISM band with 16 separate channels, 8 for FSK and 8 for OOK. Interfacing with the chipset is done via UART and the USB-to-TTL chip on the PCB. Air Chat has no encryption, checksums, or nonces that would ensure data integrity or attribution; it is intentionally vulnerable as a learning tool for students.
 
+# Transceiver Details
+
+### RF Parameters
+* 16 channels broken up into 8 2FSK and 8 OOK
+* Each channel is spaced 200 kHz
+* CH 00 starts at 913.05 MHz
+* For 2FSK, the signal frequency deviation is 25 kHz
+* Baud rate is 9600 for FSK and 4800 for OOK
+* Power level is approximately 0 dBm at the antenna port
+
+### Protocol
+The protocol is the same for both 2FSK and OOK. Each packet is variable length up to 192 ASCII characters. 
+The basic structure is shown in the figure below:
+
+![Image](images/proto1.png)
+
+* Preamble: 8 bytes long, composed of alternating 1’s and 0’s (0xAA)
+* Start of frame sequence: 4 bytes, 0xD3 0x91 repeated
+* Packet length: 1 byte, integer packet length
+* Type: 1 byte, integer packet type. RF messages will always be 0x02. Integers 0x00, 0x01, and 0x03 are reserved for internal control data.
+* Screen name length: 1 byte, integer length of the user's chosen screen name
+* Data: variable length, ASCII message data
+* End of data sequence: 1 byte, always 0xFF
+
+### Example TX
+
+Username: “rns”
+Message: “test”
+
+![Image](images/proto2.png)
+
+Packet length:	0x0A (decimal 10)
+[1 byte type, 1 byte SN length, 3 bytes screen name, 4 bytes data, and 1 byte end of data sequence]
+
+Type: 0x02 (RF message)
+
+SN Length: 0x03 (“r”, “n”, “s”,)
+
+Data: ASCII values (“r”, “n”, “s”, “t”, “e”, “s”, “t”)
+
+End: 0xFF
+
 # Hardware
 
 ### Schematic 
