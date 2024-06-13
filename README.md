@@ -106,4 +106,9 @@ Users interact with the AirChat PCB with a python client. The program is built u
 	* Magenta for self text messages
 
 ![Image](images/airchat-gui.png)  
-*AirChat GUI showing a simple text exchnage. Debug information is shown in the terminal.*
+*AirChat GUI showing a simple text exchange. Debug information is shown in the terminal.*
+
+### Firmware
+Firmware is written for the STM32 using the Cube IDE. Initial microcontroller configuration uses the Cube MX utility. The firmware is essentially a large polling loop that polls the USART and SPI inputs. When a full message (or configuration command) is received, TX functions are called for either the CC1101 or the USART.
+
+In-depth code comments are available in the main C program.
