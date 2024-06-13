@@ -32,6 +32,15 @@ System has two modulation types: 2FSK at 9600 baud and OOK at 4800 baud and is d
 * Baud rate is 9600 for FSK and 4800 for OOK
 * Power level is approximately 0 dBm at the antenna port
 
+![Image](images/spectrogram.PNG)  
+*Spectrogram of both 2FSK and OOK.*
+
+![Image](images/fsk-tx.PNG)  
+*2FSK TX capture.*
+
+![Image](images/ook-tx.PNG)  
+*OOK TX capture.*
+
 ### Protocol
 The protocol is the same for both 2FSK and OOK. Each packet is variable length up to 192 ASCII characters. 
 The basic structure is shown in the figure below:
