@@ -30,11 +30,26 @@ PCB schematic can be found in the *hardware* folder. Key sections are:
 * 915 MHz impedance matching network. PCB is configured to use the 915 ISM band. While the CC1101 can use other bands, the firmware for AirChat only allows 915 MHz.
 
 ![Image](images/STM32_pins.PNG)  
-*STM32 pin diagram from CubeMX*
+*STM32 pin diagram from CubeMX.*
 
 ### PCB
-PCB design was done in both KiCAD and EasyEDA. Production files (Gerber files, materials, and pick-and-place) are included in this repo. Top and bottom copper layers are located in the images folder. PCB measure 60mm by 80mm and has three size M3 screw mounting holes. Antenna attachment is SMA-F, so any 915 MHz SMA-M antenna will work. USB cable is a standard USB-A port.
+PCB design was done in both KiCAD and EasyEDA. Production files (Gerber files, materials, and pick-and-place) are included in this repo. Top and bottom copper layers are located in the images folder. PCB measures 60mm by 80mm and has three M3-size screw mounting holes. Antenna attachment is SMA-F, so any 915 MHz SMA-M antenna will work. USB cable is a standard USB-A port.
 ![Image](images/PCB_1.jpg)  
 *production version of the PCB*
 ![Image](images/PCB_2.jpg)  
-*PCB next to antenna and USB cable*
+*PCB next to antenna and USB cable.*
+
+# Software
+### Python client
+Users interact with the AirChat PCB with a python client. The program is built using QTGui and gives the users an intuitive interface:
+* Channel selection - channels 00 through 07 are FSK and channels 10 through 17 are OOK
+* User-defined username from 3 to 16 characters
+* User text input with a maximum message size of 192 characters
+* Message display with color-codes
+	* Red for error messages
+	* Green for system messages
+	* Blue for other user text messages
+	* Magenta for self text messages
+
+![Image](images/airchat-gui.png)  
+*AirChat GUI showing a simple text exchnage. Debug information is shown in the terminal.*
