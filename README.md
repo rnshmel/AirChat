@@ -10,6 +10,9 @@ Firmware is not optimized due to time constraints, and I would still call it a â
 ##### BUGS  
 Carrier sense collision avoidance (CSCA) will fail to detect a transmission until the preamble is finished. OOK modulation has cross talk issue at close range (1-2 meters).
 
+# Dependencies
+Placeholder
+
 # Overview
 
 Project consists of 3 main components:
