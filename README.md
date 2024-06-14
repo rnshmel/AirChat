@@ -1,6 +1,7 @@
 # AirChat
 
 Author and original creator: Richard Shmel
+Built and tested on Ubuntu 20
 
 AirChat is the project name for a low-cost, easily exploitable/reversible, RF transceiver. It is used as a capstone exercise for my Software Defined Radio 101 (SDR 101) course I am teaching at DEF CON Trainings.
 
@@ -11,7 +12,13 @@ Firmware is not optimized due to time constraints, and I would still call it a â
 Carrier sense collision avoidance (CSCA) will fail to detect a transmission until the preamble is finished. OOK modulation has cross talk issue at close range (1-2 meters).
 
 # Dependencies
-Placeholder
+*sudo apt-get install python3-serial python3-pyqt5*
+
+user must be part of the "dialout" group
+
+*sudo adduser USERNAME dialout*
+
+where USERNAME is the user to add to the group
 
 # Overview
 
