@@ -1,6 +1,7 @@
 # AirChat
 
 Author and original creator: Richard Shmel
+
 Built and tested on Ubuntu 20
 
 AirChat is the project name for a low-cost, easily exploitable/reversible, RF transceiver. It is used as a capstone exercise for my Software Defined Radio 101 (SDR 101) course I am teaching at DEF CON Trainings.
