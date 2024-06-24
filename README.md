@@ -66,6 +66,7 @@ The basic structure is shown in the figure below:
 ### Example TX
 
 Username: “rns”
+
 Message: “test”
 
 ![Image](images/proto2.png)
