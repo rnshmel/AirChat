@@ -89,7 +89,7 @@ PCB schematic can be found in the *hardware* folder. Key sections are:
 * STM32-G03 microcontroller. Communicates with the client via USART 1 and with the RF chip via SPI 1. Has two LED outputs for TX and RX. Has two GPIO inputs from the RF chip which are used as signals to show specific information.
 * Texas Instruments CC1101 RF Transceiver. Uses SPI to send/receive data from the STM32. Uses an SMA antenna to send/receive RF packets.
 * LM1117 linear voltage regulator. Converts 5VDC from USB to 3.3VDC.
-*CP2102 USB-to-TTL: Converts USB data to UART data. Original version omitted this and used a special cable. Newest hardware iteration adds this chip to the PCB.
+* CP2102 USB-to-TTL: Converts USB data to UART data. Original version omitted this and used a special cable. Newest hardware iteration adds this chip to the PCB.
 * 915 MHz impedance matching network. PCB is configured to use the 915 ISM band. While the CC1101 can use other bands, the firmware for AirChat only allows 915 MHz.
 
 ![Image](images/STM32_pins.PNG)  
