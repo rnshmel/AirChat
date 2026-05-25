@@ -2,43 +2,52 @@
 
 Author and original creator: Richard Shmel
 
-Built and tested on Ubuntu 20
+AirChat is the project name for a low-cost, easily exploitable/reversible, RF transceiver. It is used as a capstone exercise for my Software Defined Radio 101 (SDR 101) course. For more information on that please visit https://www.rnstechsolutions.com 
 
-AirChat is the project name for a low-cost, easily exploitable/reversible, RF transceiver. It is used as a capstone exercise for my Software Defined Radio 101 (SDR 101) course I am teaching at DEF CON Trainings.
+# Dependencies and Installation
 
-##### TODO
-Firmware is not optimized due to time constraints, and I would still call it a “beta” release. Refactor to use a more state-machine and interrupt-driven solution.
+AirChat's host software is fully containerized using Docker. 
 
-##### BUGS  
-Carrier sense collision avoidance (CSCA) will fail to detect a transmission until the preamble is finished. OOK modulation has cross talk issue at close range (1-2 meters).
+Ensure you have [Docker](https://docs.docker.com/engine/install/), [Docker Compose](https://docs.docker.com/compose/install/), and [Docker Buildx](https://docs.docker.com/build/install-buildx/) installed. The user running the container must be part of the `dialout` group to allow USB passthrough to the hardware.
 
-# Dependencies
-*sudo apt-get install python3-serial python3-pyqt5*
+```bash
+sudo adduser USERNAME dialout
+```
+*(where USERNAME is the user to add to the group)*
 
-user must be part of the "dialout" group
+To build the Docker image and run the orchestrator backend and web UI:
 
-*sudo adduser USERNAME dialout*
+First, build the image using the provided shell script:
+```bash
+cd software/host/build
+./build.sh
+```
 
-where USERNAME is the user to add to the group
+Then, start the container using Docker Compose:
+```bash
+cd ..
+docker compose up -d
+```
+The Web UI will be available at `http://localhost:8000`.
 
 # Overview
 
 Project consists of 3 main components:
-* custom PCB using a STM32 and a TI CC1101
-* Firmware for the STM32 (C)
-* Client software to interface with the board (Python)
+* Custom PCB using an STM32G03 and a TI CC1101
+* Firmware for the STM32 (C, interrupt driven state machine)
+* Host software (Python FastAPI backend and HTML/JS/Tailwind web UI)
 
-System has two modulation types: 2FSK at 9600 baud and OOK at 4800 baud and is designed to transmit only ASCII characters as a simple “chat program”. Operates in the 915 ISM band with 16 separate channels, 8 for FSK and 8 for OOK. Interfacing with the chipset is done via UART and the USB-to-TTL chip on the PCB. Air Chat has no encryption, checksums, or nonces that would ensure data integrity or attribution; it is intentionally vulnerable as a learning tool for students.
+System operates in the 915 ISM band and is designed to transmit ASCII characters as a simple terminal "chat program". AirChat has no encryption, checksums, or nonces that would ensure data integrity or attribution; it is intentionally vulnerable as a learning tool for students.
 
 # Transceiver Details
 
 ### RF Parameters
-* 16 channels broken up into 8 2FSK and 8 OOK
-* Each channel is spaced 200 kHz
-* CH 00 starts at 913.05 MHz
-* For 2FSK, the signal frequency deviation is 25 kHz
-* Baud rate is 9600 for FSK and 4800 for OOK
-* Power level is approximately 0 dBm at the antenna port
+* 10 Channels (CH 00 to CH 09) per mode.
+* Three distinct RF Modes:
+  * **Legacy:** OOK at 4800 baud
+  * **Standard:** 2FSK at 9600 baud (25 kHz deviation)
+  * **Advanced:** 4FSK at 38400 baud (25 kHz deviation)
+* Power level is approximately +11 dBm at the antenna port for all modes.
 
 ![Image](images/spectrogram.PNG)  
 *Spectrogram of both 2FSK and OOK.*
@@ -50,74 +59,64 @@ System has two modulation types: 2FSK at 9600 baud and OOK at 4800 baud and is d
 *OOK TX capture.*
 
 ### Protocol
-The protocol is the same for both 2FSK and OOK. Each packet is variable length up to 192 ASCII characters. 
-The basic structure is shown in the figure below:
 
-![Image](images/proto1.png)
+The Over-The-Air (OTA) protocol uses variable-length packets. The underlying CC1101 handles the preamble (0xAA alternating), sync words (0xD3 0x91), and hardware packet length. The payload structure inside the RF FIFO is as follows:
 
-* Preamble: 8 bytes long, composed of alternating 1’s and 0’s (0xAA)
-* Start of frame sequence: 4 bytes, 0xD3 0x91 repeated
-* Packet length: 1 byte, integer packet length
-* Type: 1 byte, integer packet type. RF messages will always be 0x02. Integers 0x00, 0x01, and 0x03 are reserved for internal control data.
-* Screen name length: 1 byte, integer length of the user's chosen screen name
-* Data: variable length, ASCII message data
-* End of data sequence: 1 byte, always 0xFF
+| Byte Offset | Field | Size (Bytes) | Description |
+|---|---|---|---|
+| 0 | Type | 1 | Packet type ID (Always `0x02` for chat messages) |
+| 1 | Color ID | 1 | Terminal UI color code (`0x01` to `0x08`) |
+| 2 | SN Length | 1 | Length of Screen Name (`L`) |
+| 3 | Screen Name | `L` | ASCII Username (Max 16 chars) |
+| 3 + `L` | Message Data| Variable | ASCII Message (Max 224 chars) |
 
-### Example TX
+### Host-to-PCB Serial API
 
-Username: “rns”
+The host PC and the STM32 communicate over a 115200 baud serial connection using a simple binary protocol framed by UART IDLE line detection. 
 
-Message: “test”
-
-![Image](images/proto2.png)
-
-Packet length:	0x0A (decimal 10)
-[1 byte type, 1 byte SN length, 3 bytes screen name, 4 bytes data, and 1 byte end of data sequence]
-
-Type: 0x02 (RF message)
-
-SN Length: 0x03 (“r”, “n”, “s”,)
-
-Data: ASCII values (“r”, “n”, “s”, “t”, “e”, “s”, “t”)
-
-End: 0xFF
+| Direction | Type ID | Name | Payload Structure |
+|---|---|---|---|
+| Host -> PCB | `0x01` | Configuration | `[0x01] [Channel] [Mode] [Seed]` |
+| Host <-> PCB| `0x02` | TX/RX Message | `[0x02] [Color ID] [SN Len] [Screen Name] [Message]` |
+| PCB -> Host | `0x03` | System Status | `[0x03] [Status Code]` |
 
 # Hardware
 
 ### Schematic 
-PCB schematic can be found in the *hardware* folder. Key sections are:
-* STM32-G03 microcontroller. Communicates with the client via USART 1 and with the RF chip via SPI 1. Has two LED outputs for TX and RX. Has two GPIO inputs from the RF chip which are used as signals to show specific information.
-* Texas Instruments CC1101 RF Transceiver. Uses SPI to send/receive data from the STM32. Uses an SMA antenna to send/receive RF packets.
+PCB schematic can be found in the `hardware` folder. Key sections are:
+* STM32-G03 microcontroller. Communicates with the host via USART 1 and with the RF chip via SPI 1. Uses DMA for high-speed UART transfers.
+* Texas Instruments CC1101 RF Transceiver. Uses SPI to send/receive data. Uses an SMA antenna to send/receive RF packets.
 * LM1117 linear voltage regulator. Converts 5VDC from USB to 3.3VDC.
-* CP2102 USB-to-TTL: Converts USB data to UART data. Original version omitted this and used a special cable. Newest hardware iteration adds this chip to the PCB.
-* 915 MHz impedance matching network. PCB is configured to use the 915 ISM band. While the CC1101 can use other bands, the firmware for AirChat only allows 915 MHz.
+* CP2102N USB-to-TTL: Converts USB data to UART data directly on the PCB.
 
 ![Image](images/STM32_pins.PNG)  
 *STM32 pin diagram from CubeMX.*
 
 ### PCB
-PCB design was done in both KiCAD and EasyEDA. Production files (Gerber files, materials, and pick-and-place) are included in this repo. Top and bottom copper layers are located in the images folder. PCB measures 60mm by 80mm and has three M3-size screw mounting holes. Antenna attachment is SMA-F, so any 915 MHz SMA-M antenna will work. USB cable is a standard USB-A port.
+PCB design was done in both KiCAD and EasyEDA. Production files (Gerber files, materials, and pick-and-place) are included in `hardware/production_files/`. PCB measures 60mm by 80mm and has three M3-size screw mounting holes. Antenna attachment is SMA-F.
 ![Image](images/PCB_1.jpg)  
-*production version of the PCB*
-![Image](images/PCB_2.jpg)  
-*PCB next to antenna and USB cable.*
+*Production version of the PCB.*
 
 # Software
-### Python client
-Users interact with the AirChat PCB with a python client. The program is built using QTGui and gives the users an intuitive interface:
-* Channel selection - channels 00 through 07 are FSK and channels 10 through 17 are OOK
-* User-defined username from 3 to 16 characters
-* User text input with a maximum message size of 192 characters
-* Message display with color-codes
-	* Red for error messages
-	* Green for system messages
-	* Blue for other user text messages
-	* Magenta for self text messages
+### Web Client and Orchestrator
+Users interact with the AirChat PCB using a browser-based terminal UI. The Python `orchestrator.py` uses FastAPI and WebSockets to bridge the serial hardware to the browser.
+* Target configuration (Channel 00-09, Mode selection)
+* Custom identifiers and terminal color coding
+* Asynchronous hardware TX queueing with ACK verification
+
+The backend code and Docker configuration are located in `software/host/`.
 
 ![Image](images/airchat-gui.png)  
-*AirChat GUI showing a simple text exchange. Debug information is shown in the terminal.*
+*AirChat web GUI terminal interface.*
 
 ### Firmware
-Firmware is written for the STM32 using the Cube IDE. Initial microcontroller configuration uses the Cube MX utility. The firmware is essentially a large polling loop that polls the USART and SPI inputs. When a full message (or configuration command) is received, TX functions are called for either the CC1101 or the USART.
+Firmware is written for the STM32 using the Cube IDE and is located in `software/firmware/`. 
+The updated architecture relies on an interrupt-driven state machine:
+* **UART DMA:** Uses IDLE line detection to capture variable-length serial packets directly into a ring buffer.
+* **Timer Interrupts:** Replaces blocking delays by polling the CC1101 RX FIFO asynchronously.
+* **Dynamic Loading:** The `CC1101_Transmit_Packet` function handles payloads larger than the CC1101's 64-byte FIFO by dynamically feeding the FIFO mid-transmission.
 
-In-depth code comments are available in the main C program.
+# License
+This project is licensed under the **Creative Commons: Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**. 
+
+It is open source and free for anyone to use, share, and adapt. However, you may **only use this material for non-commercial purposes** unless explicitly authorized by the creator. Contact form available at https://www.rnstechsolutions.com

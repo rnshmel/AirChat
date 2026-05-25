@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirChat V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            /* MONO THEME */
+            --bg-main: #121212;
+            --bg-panel: #151515;
+            --bg-input: #1a1a1a;
+            --bg-btn: #222222;
+            --border-main: #666666;
+            --border-dim: #444444;
+            --text-main: #eeeeee;
+            --text-dim: #aaaaaa;
+            --text-bright: #ffffff;
+            --shadow-main: rgba(255, 255, 255, 0.1);
+            --shadow-focus: rgba(255, 255, 255, 0.4);
+            --shadow-hover: #ffffff;
+            --btn-hover-bg: #ffffff;
+            --btn-hover-text: #000000;
+            --scroll-track: #1a1a1a;
+            --scroll-thumb: #666666;
+        }
+
+        .theme-green {
+            /* GREEN THEME */
+            --bg-main: #121212;
+            --bg-panel: #151515;
+            --bg-input: #1a1a1a;
+            --bg-btn: #112211;
+            --border-main: #33ff33;
+            --border-dim: #004400;
+            --text-main: #00ff00;
+            --text-dim: #00aa00;
+            --text-bright: #33ff33;
+            --shadow-main: rgba(0, 255, 0, 0.2);
+            --shadow-focus: rgba(0, 255, 0, 0.6);
+            --shadow-hover: #00ff00;
+            --btn-hover-bg: #00ff00;
+            --btn-hover-text: #000000;
+            --scroll-track: #1a1a1a;
+            --scroll-thumb: #00ff00;
+        }
+
+        /* Custom terminal styling */
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .terminal-border {
+            border: 1px solid var(--border-main);
+            box-shadow: 0 0 10px var(--shadow-main);
+        }
+
+        .input-retro {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-main);
+            color: var(--text-bright);
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-retro:focus {
+            box-shadow: 0 0 8px var(--shadow-focus);
+        }
+        
+        .input-retro:disabled {
+            border-color: var(--border-dim);
+            color: var(--text-dim);
+            box-shadow: none;
+        }
+
+        .btn-retro {
+            background-color: var(--bg-btn);
+            border: 1px solid var(--border-main);
+            color: var(--text-bright);
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-retro:hover:not(:disabled) {
+            background-color: var(--btn-hover-bg);
+            color: var(--btn-hover-text);
+            box-shadow: 0 0 10px var(--shadow-hover);
+        }
+        
+        .btn-retro:disabled {
+            border-color: var(--border-dim);
+            color: var(--text-dim);
+            background-color: var(--bg-main);
+            cursor: not-allowed;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--scroll-track); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--scroll-thumb); 
+        }
+
+        .color-1 { color: #cccccc; } /* Light Gray */
+        .color-2 { color: #ff8888; } /* Light Red */
+        .color-3 { color: #88ff88; } /* Light Green */
+        .color-4 { color: #ffff88; } /* Light Yellow */
+        .color-5 { color: #8888ff; } /* Light Blue */
+        .color-6 { color: #ff88ff; } /* Light Magenta */
+        .color-7 { color: #88ffff; } /* Light Cyan */
+        .color-8 { color: #ffffff; } /* Bright White */
+        
+        .msg-info { color: #55ffff; }
+        .msg-warning { color: #ffff55; }
+        .msg-error { color: #ff5555; }
+    </style>
+</head>
+<body class="h-screen flex flex-col p-4 overflow-hidden">
+
+    <!-- Header -->
+    <header class="mb-4 flex justify-between items-end border-b border-[var(--border-dim)] pb-2">
+        <div>
+            <h1 class="text-3xl font-bold tracking-widest text-[var(--text-bright)]">/// AIRCHAT v2.0</h1>
+            <p class="text-xs text-[var(--text-dim)]">SECURE RF TERMINAL INTERFACE</p>
+        </div>
+        <div class="flex items-end gap-4">
+            <button id="btn-theme" class="text-xs border border-[var(--border-dim)] px-2 py-1 text-[var(--text-dim)] hover:bg-[var(--text-bright)] hover:text-[var(--bg-main)] transition-colors">
+                TOGGLE THEME
+            </button>
+            <div class="text-right">
+                <span id="conn-status" class="text-red-500 font-bold animate-pulse">OFFLINE</span>
+                <p class="text-xs text-[var(--text-dim)]">WS://LOCALHOST:8000/WS</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 gap-4 overflow-hidden">
+        
+        <!-- Sidebar / Config -->
+        <aside class="w-64 flex flex-col gap-4">
+            <div class="terminal-border p-3 flex flex-col gap-3">
+                <h2 class="text-sm font-bold border-b border-[var(--border-dim)] pb-1 mb-1">USER CONFIG</h2>
+                
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-[var(--text-dim)]">USERNAME (MAX 16)</label>
+                    <input type="text" id="inp-username" maxlength="16" placeholder="username" class="input-retro p-1 text-sm w-full">
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-[var(--text-dim)]">IDENT COLOR</label>
+                    <select id="sel-color" class="input-retro p-1 text-sm w-full">
+                        <option value="1" class="color-1">Gray</option>
+                        <option value="2" class="color-2">Red</option>
+                        <option value="3" class="color-3" selected>Green</option>
+                        <option value="4" class="color-4">Yellow</option>
+                        <option value="5" class="color-5">Blue</option>
+                        <option value="6" class="color-6">Magenta</option>
+                        <option value="7" class="color-7">Cyan</option>
+                        <option value="8" class="color-8">White</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="terminal-border p-3 flex flex-col gap-3">
+                <h2 class="text-sm font-bold border-b border-[var(--border-dim)] pb-1 mb-1">RADIO TARGET</h2>
+                
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-[var(--text-dim)]">CHANNEL</label>
+                    <select id="sel-channel" class="input-retro p-1 text-sm w-full">
+                        <script>
+                            for(let i=0; i<10; i++) {
+                                document.write(`<option value="${i}">CH ${i.toString().padStart(2, '0')}</option>`);
+                            }
+                        </script>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs text-[var(--text-dim)]">RF MODE</label>
+                    <select id="sel-mode" class="input-retro p-1 text-sm w-full">
+                        <option value="0">Legacy</option>
+                        <option value="1" selected>Standard</option>
+                        <option value="2">Advanced</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-2 mt-2">
+                    <button id="btn-scan" class="btn-retro p-2 text-sm font-bold" disabled>SCAN FOR RADIO</button>
+                    <button id="btn-config" class="btn-retro p-2 text-sm font-bold" disabled>APPLY CONFIG</button>
+                </div>
+            </div>
+            
+            <div class="mt-auto flex flex-col gap-2">
+                <button id="btn-clear" class="btn-retro p-2 font-bold">CLEAR MESSAGES</button>
+                <button id="btn-connect" class="btn-retro p-2 font-bold">CONNECT LOCALHOST</button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col terminal-border p-1 bg-[var(--bg-panel)]">
+            
+            <!-- Chat Log -->
+            <div id="chat-log" class="flex-1 overflow-y-auto p-3 flex flex-col gap-1 font-mono text-sm">
+                <!-- System message initialized via JS -->
+            </div>
+
+            <!-- Input Area -->
+            <form id="chat-form" class="mt-2 p-2 border-t border-[var(--border-dim)] flex gap-2">
+                <span class="text-[var(--text-bright)] font-bold self-center">></span>
+                <input type="text" id="inp-message" maxlength="224" autocomplete="off" placeholder="Enter message (max 224 chars)." class="input-retro flex-1 p-2 bg-transparent" disabled>
+                <button type="submit" id="btn-send" class="btn-retro px-6 font-bold" disabled>TX</button>
+            </form>
+        </main>
+    </div>
+
+    <script>
+        // UI Elements
+        const chatLog = document.getElementById('chat-log');
+        const chatForm = document.getElementById('chat-form');
+        const inpMessage = document.getElementById('inp-message');
+        const inpUsername = document.getElementById('inp-username');
+        const selColor = document.getElementById('sel-color');
+        const selChannel = document.getElementById('sel-channel');
+        const selMode = document.getElementById('sel-mode');
+        const btnConfig = document.getElementById('btn-config');
+        const btnScan = document.getElementById('btn-scan');
+        const btnSend = document.getElementById('btn-send');
+        const btnClear = document.getElementById('btn-clear');
+        const btnConnect = document.getElementById('btn-connect');
+        const connStatus = document.getElementById('conn-status');
+        const btnTheme = document.getElementById('btn-theme');
+
+        let ws = null;
+        
+        // Configuration
+        const MAX_MESSAGES = 200;
+
+        // Theme Toggle Logic
+        btnTheme.addEventListener('click', () => {
+            document.body.classList.toggle('theme-green');
+        });
+
+        // Utilities
+        function getTimestamp() {
+            const now = new Date();
+            return now.toTimeString().split(' ')[0]; // HH:MM:SS
+        }
+
+        function appendWithSmartScroll(element) {
+            const isNearBottom = chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 50;
+            
+            chatLog.appendChild(element);
+            
+            while (chatLog.children.length > MAX_MESSAGES) {
+                chatLog.removeChild(chatLog.firstChild);
+            }
+
+            if (isNearBottom) {
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+        }
+
+        function appendSysMsg(level, message) {
+            const div = document.createElement('div');
+            let colorClass = 'msg-info';
+            let prefix = '[SYS]';
+            
+            if (level === 'warning') { colorClass = 'msg-warning'; prefix = '[WARN]'; }
+            if (level === 'error') { colorClass = 'msg-error'; prefix = '[ERR]'; }
+            
+            div.className = `opacity-80 ${colorClass}`;
+            div.innerHTML = `<span class="text-xs text-[var(--text-dim)] mr-2">${getTimestamp()}</span> <b>${prefix}</b> ${message}`;
+            
+            appendWithSmartScroll(div);
+        }
+
+        function appendChatMsg(username, colorId, message) {
+            const div = document.createElement('div');
+            const sanitizedMsg = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const sanitizedUser = username.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            
+            const colorClass = `color-${colorId >= 0 && colorId <= 11 ? colorId : 0}`;
+            
+            div.innerHTML = `
+                <span class="text-xs text-[var(--text-dim)] mr-2">${getTimestamp()}</span>
+                <span class="font-bold ${colorClass}">&lt;${sanitizedUser}&gt;</span>
+                <span class="text-[var(--text-main)] ml-1">${sanitizedMsg}</span>
+            `;
+            
+            appendWithSmartScroll(div);
+        }
+
+        // Connection Handling
+        function connectWS() {
+            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                ws.close();
+                return;
+            }
+
+            // Target the localhost FastAPI backend (assuming port 8000 for standard dev)
+            const wsUrl = `ws://${window.location.hostname || 'localhost'}:8000/ws`;
+            appendSysMsg('info', `Attempting connection to ${wsUrl}.`);
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    connStatus.textContent = 'ONLINE';
+                    connStatus.className = 'text-[var(--text-bright)] font-bold';
+                    btnConnect.textContent = 'DISCONNECT';
+                    btnConfig.disabled = false;
+                    btnScan.disabled = false;
+                    inpMessage.disabled = false;
+                    btnSend.disabled = false;
+                    appendSysMsg('info', 'WebSocket connection established.');
+                };
+
+                ws.onclose = () => {
+                    connStatus.textContent = 'OFFLINE';
+                    connStatus.className = 'text-red-500 font-bold animate-pulse';
+                    btnConnect.textContent = 'CONNECT LOCALHOST';
+                    btnConfig.disabled = true;
+                    btnScan.disabled = true;
+                    inpMessage.disabled = true;
+                    btnSend.disabled = true;
+                    appendSysMsg('warning', 'WebSocket connection closed.');
+                    ws = null;
+                };
+
+                ws.onerror = (err) => {
+                    appendSysMsg('error', 'WebSocket error occurred. Is the backend running?');
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.event === 'rx_msg') {
+                            appendChatMsg(data.username, data.color_id, data.message);
+                        } else if (data.event === 'sys_msg') {
+                            appendSysMsg(data.level, data.message);
+                        }
+                    } catch (e) {
+                        appendSysMsg('error', 'Failed to parse incoming payload.');
+                        console.error("Payload error:", event.data);
+                    }
+                };
+            } catch (err) {
+                appendSysMsg('error', `Failed to open socket: ${err.message}`);
+            }
+        }
+
+        // Event Listeners
+        btnConnect.addEventListener('click', connectWS);
+
+        btnClear.addEventListener('click', () => {
+            chatLog.innerHTML = '';
+            appendSysMsg('info', 'Local terminal display cleared.');
+        });
+
+        btnScan.addEventListener('click', () => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            const payload = {
+                command: "scan_radio"
+            };
+            
+            ws.send(JSON.stringify(payload));
+            appendSysMsg('info', 'Requesting CP2102N radio scan from backend.');
+        });
+
+        btnConfig.addEventListener('click', () => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            const payload = {
+                command: "set_config",
+                channel: parseInt(selChannel.value),
+                mode: parseInt(selMode.value)
+            };
+            
+            ws.send(JSON.stringify(payload));
+            appendSysMsg('info', `Sending config: CH${payload.channel}, Mode ${payload.mode}`);
+        });
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            const msgText = inpMessage.value.trim();
+            let uname = inpUsername.value.trim();
+            
+            if (!msgText) return;
+            if (!uname) uname = "user";
+            
+            const payload = {
+                command: "tx_msg",
+                username: uname,
+                color_id: parseInt(selColor.value),
+                message: msgText
+            };
+
+            ws.send(JSON.stringify(payload));
+            
+            appendChatMsg(uname, payload.color_id, msgText);
+            
+            inpMessage.value = '';
+        });
+
+        // Initialize display
+        appendSysMsg('info', 'AirChat V2 Client Initialized. Awaiting connection to backend.');
+        
+        // Auto-focus username on load
+        inpUsername.focus();
+
+    </script>
+</body>
+</html>

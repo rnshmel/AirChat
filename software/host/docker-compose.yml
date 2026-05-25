@@ -1,0 +1,18 @@
+services:
+  orchestrator:
+    image: airchat-v2:latest
+    container_name: airchat-orchestrator
+    
+    privileged: true
+    
+    restart: unless-stopped
+    
+    ports:
+      - "8000:8000"
+      
+    volumes:
+      # Passes the host's live device tree into the container. 
+      - /dev:/dev
+      
+      # Passes the Linux sysfs tree as read-only. 
+      - /sys:/sys:ro
