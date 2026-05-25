@@ -49,13 +49,13 @@ System operates in the 915 ISM band and is designed to transmit ASCII characters
   * **Advanced:** 4FSK at 38400 baud (25 kHz deviation)
 * Power level is approximately +11 dBm at the antenna port for all modes.
 
-![Image](images/spectrogram.PNG)  
+![Image](images/spectrogram.png)  
 *Spectrogram of both 2FSK and OOK.*
 
-![Image](images/fsk-tx.PNG)  
+![Image](images/fsk-tx.png)  
 *2FSK TX capture.*
 
-![Image](images/ook-tx.PNG)  
+![Image](images/ook-tx.png)  
 *OOK TX capture.*
 
 ### Protocol
@@ -89,12 +89,12 @@ PCB schematic can be found in the `hardware` folder. Key sections are:
 * LM1117 linear voltage regulator. Converts 5VDC from USB to 3.3VDC.
 * CP2102N USB-to-TTL: Converts USB data to UART data directly on the PCB.
 
-![Image](images/STM32_pins.PNG)  
+![Image](images/STM32_pins.png)  
 *STM32 pin diagram from CubeMX.*
 
 ### PCB
 PCB design was done in both KiCAD and EasyEDA. Production files (Gerber files, materials, and pick-and-place) are included in `hardware/production_files/`. PCB measures 60mm by 80mm and has three M3-size screw mounting holes. Antenna attachment is SMA-F.
-![Image](images/PCB_1.jpg)  
+![Image](images/PCB_1.png)  
 *Production version of the PCB.*
 
 # Software
